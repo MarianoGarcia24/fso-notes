@@ -1,3 +1,6 @@
 #node modules
 /notes-backend/node_modules
 /notes-frontend/node_modules
+
+#dotenv
+*.env
