@@ -4,3 +4,7 @@
 
 #dotenv
 *.env
+
+#ongojs
+/notes-backend/mongo.js
+
