@@ -1,46 +1,78 @@
 const notesRouter = require('express').Router()
 const Note = require('../models/note')
+const User = require('../models/user')
+const jwt = require('jsonwebtoken')
 
-notesRouter.get('/',(req,res) => {
-    Note.find({}).then(notes => res.send(notes))
+const getTokenFrom = (req) => {
+    const authorization = req.get('authorization')
+    if (authorization && authorization.startsWith('Bearer ')){
+        return authorization.replace('Bearer ', '')
+    }
+    return null
+}
+
+notesRouter.get('/', async (req,res) => {
+    const notes = await Note.find({}).populate('user',{ username: 1, name: 1 })
+    res.json(notes)
 })
 
-notesRouter.get('/:id',(req,res,next) => {
+notesRouter.get('/:id',async (req,res,next) => {
     const id = req.params.id
-    Note.findById(id).then(n => {
-        if (n)
-            res.json(n)
+    try{
+        const note = await Note.findById(id)
+        if (note)
+            res.json(note)
         else
             res.status(404).end()
-    })
-        .catch(error => next(error))
+    }
+    catch(exc){
+        next(exc)
+    }
 })
 
-notesRouter.delete('/:id',(req,res,next) => {
+notesRouter.delete('/:id',async (req,res,next) => {
     const idToDelete = req.params.id
-    Note.findByIdAndDelete(idToDelete)
-        .then(response => res.status(204))
-        .catch(err => next(err))
+    try{
+        await Note.findByIdAndDelete(idToDelete)
+        res.status(204).end()
+    }
+    catch(exc){
+        next(exc)
+    }
 })
 
-notesRouter.post('/',(req,res, next) => {
+notesRouter.post('/',async (req,res, next) => {
     const body = req.body
 
-    if (body.content === undefined){
-        return res.status(400).json({
-            error: 'content missing'
-        })
+    const Token = jwt.verify(getTokenFrom(req), process.env.SECRET)
+
+    if (!Token.id){
+        return res.status(401).json({ error: 'token invalid' })
+    }
+    const user = await User.findById(Token.id)
+
+    // if (body.content === undefined){
+    //     return res.status(400).json({
+    //         error: 'content missing'
+    //     })
+    // }
+
+    const note = new Note({
+        content: body.content,
+        important: body.important === undefined ? false : body.important,
+        user: user.id
+    })
+
+    try {
+        const savedNote = await note.save()
+        user.notes = user.notes.concat(savedNote._id)
+        await user.save()
+        res.status(201).json(savedNote)
+    }
+    catch(ex) {
+        next(ex)
     }
 
-    console.log(req.body)
-    const note = new Note({
-        content: req.body.content,
-        important: req.body.important || false,
-    })
-    note.save().then(savedNote => {
-        res.json(savedNote)
-    })
-        .catch(error => next(error))
 })
 
 notesRouter.put('/:id',(req,res,next) => {

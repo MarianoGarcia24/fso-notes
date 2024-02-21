@@ -3,7 +3,7 @@
 /notes-frontend/node_modules
 
 #dotenv
-*.env
+notes-backend/.env
 
 #ongojs
 /notes-backend/mongo.js

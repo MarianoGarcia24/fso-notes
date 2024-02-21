@@ -7,10 +7,13 @@ const mongoose = require('mongoose')
 //PROJECT INITIALIZATIONS
 const config = require('./utils/config')
 const logger = require('./utils/logger')
+
+//ROUTERS
 const notesRouter = require('./controllers/notes')
 const usersRouter = require('./controllers/users')
+const loginRouter = require('./controllers/login')
+
 const middleware = require('./utils/middleware')
-const note = require('./models/note')
 
 mongoose.set('strictQuery',false)
 
@@ -33,6 +36,7 @@ app.use(middleware.requestLogger)
 //ROUTERS --> URLs to the resources
 app.use('/api/notes',notesRouter)
 app.use('/api/users',usersRouter)
+app.use('/api/login',loginRouter)
 
 //AFTER-REQ MIDDLEWARES
 app.use(middleware.unknownEndpoint)
